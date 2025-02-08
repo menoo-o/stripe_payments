@@ -2,8 +2,15 @@
 @tailwind components;
 @tailwind utilities;
 
+*{
+  padding: 0;
+  margin: 0;
+  box-sizing: border-box;
+}
+
 body {
   font-family: Arial, Helvetica, sans-serif;
+  height: 100vh;
 }
 
 @layer base {
@@ -69,4 +76,11 @@ body {
   body {
     @apply bg-background text-foreground;
   }
+}
+
+
+.shadcn-btn{
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
