@@ -2,7 +2,7 @@
 
 import { loadStripe } from "@stripe/stripe-js";
 import convertToSubcurrency from "@/utils/convertToSubcurrency";
-import { Elements } from "@stripe/react-stripe-js";
+import { Elements } from "@stripe/react-stripe-js"
 import CheckoutForm from "../components/CheckoutForm";
 
 if(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY === undefined){
