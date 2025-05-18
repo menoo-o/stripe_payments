@@ -12,7 +12,9 @@ export async function POST(request: NextRequest) {
       currency: "usd",
       automatic_payment_methods: { enabled: true },
     });
-
+    // would this print anything?
+    console.log(`Payment currency: ${paymentIntent.currency}`); // "Payment currency: usd"
+    console.log("PaymentIntent created:", paymentIntent);
     return NextResponse.json({ clientSecret: paymentIntent.client_secret });
   } catch (error) {
     console.error("Internal Error:", error);

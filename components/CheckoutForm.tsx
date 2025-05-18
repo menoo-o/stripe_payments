@@ -49,7 +49,7 @@ export default function CheckoutForm({amount}: {amount:number}) {
       elements,
       clientSecret,
       confirmParams:{
-        return_url: `http://localhost:3000/payment-sucess?amunt=${amount}`,
+        return_url: `http://localhost:3000/payment-sucess?amount=${amount}`,
       },
     });
 
