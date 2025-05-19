@@ -1,89 +1,94 @@
-"use client";
+'use client';
 
-import { useEffect, useState } from "react";
-import {
-  PaymentElement,
-  useStripe,
-  useElements
-} from "@stripe/react-stripe-js";
-import convertToSubcurrency from "@/utils/convertToSubcurrency";
+import { useState } from 'react';
+import { PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js';
 
-export default function CheckoutForm({amount}: {amount:number}) {
-  
+interface CheckoutFormProps {
+  clientSecret: string;
+}
+
+export default function CheckoutForm({ clientSecret }: CheckoutFormProps) {
+  return <PaymentForm clientSecret={clientSecret} />;
+}
+
+function PaymentForm({ clientSecret }: CheckoutFormProps) {
   const stripe = useStripe();
   const elements = useElements();
-  const [errorMessage, setErrorMessage] = useState<string>();
-  const [clientSecret, setClientSecret] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
 
-  useEffect(()=> {
-    fetch('/api/create-payment-intent', {
-      method: "POST",
-      headers: {
-        "Content-Type": 'application/json',
-      },
-      body: JSON.stringify({amount: convertToSubcurrency(amount) }),
-    })
-    .then((res) => res.json())
-    .then((data) => setClientSecret(data.clientSecret));
-  }, [amount]);
-  
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
 
-  const handleSubmit =async (event: React.FormEvent<HTMLFormElement>)=>{
-    event.preventDefault();
-    setLoading(true);
-  
-    if(!stripe || !elements){
+    if (!stripe || !elements) {
+      setMessage('Payment form not loaded.');
       return;
     }
 
-    const {error: submitError} = await elements.submit();
+    setIsLoading(true);
 
+    // Submit the form to validate PaymentElement data
+    const { error: submitError } = await elements.submit();
     if (submitError) {
-      setErrorMessage(submitError.message);
-      setLoading(false);
+      setMessage(submitError.message ?? 'Please complete the payment form.');
+      setIsLoading(false);
       return;
     }
 
-    const {error} = await stripe.confirmPayment({
+    // Confirm the payment
+    const { error, paymentIntent } = await stripe.confirmPayment({
       elements,
       clientSecret,
-      confirmParams:{
-        return_url: `http://localhost:3000/payment-sucess?amount=${amount}`,
+      confirmParams: {
+        return_url: 'http://localhost:3000/success',
       },
+      redirect: 'if_required',
     });
 
-    if(error){
-      setErrorMessage(error.message)
-    } else {
-
+    if (error) {
+      setMessage(error.message ?? 'An unexpected error occurred.');
+      setIsLoading(false);
+    } else if (paymentIntent?.status === 'succeeded') {
+      window.location.href = '/success';
     }
-    setLoading(false)
 
-  }
+    setIsLoading(false);
+  };
 
-  if (!clientSecret || !stripe || !elements){
-    return <div>loading...</div>
-  }
-
-
-
-
-
-return(
-  <form onSubmit={handleSubmit}>
-    {clientSecret && <PaymentElement />}
-
-    {errorMessage && <div>{errorMessage}</div>}
-
-    <button 
-        className="text-white w-full p-5 bg-black mt-2 rounded-md font-bold disabled:opacity-50 disabled:animate-pulse" 
-        disabled= {!stripe || loading}
-    >
-      {!loading ? `Pay $${amount}` : "Processing...."}
-    </button>
-  </form>
-)
-
-
-};
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div className="border p-3 rounded-md">
+        <PaymentElement />
+      </div>
+      <button
+        type="submit"
+        disabled={isLoading || !stripe || !elements}
+        className="w-full bg-blue-600 text-white py-2 rounded-md hover:bg-blue-700 disabled:bg-gray-400 flex justify-center items-center"
+      >
+        {isLoading ? (
+          <svg
+            className="animate-spin h-5 w-5 text-white"
+            viewBox="0 0 24 24"
+          >
+            <circle
+              className="opacity-25"
+              cx="12"
+              cy="12"
+              r="10"
+              stroke="currentColor"
+              strokeWidth="4"
+            />
+            <path
+              className="opacity-75"
+              fill="currentColor"
+              d="M4 12a8 8 0 018-8v8h8a8 8 0 01-16 0z"
+            />
+          </svg>
+        ) : (
+          'Pay £10'
+        )}
+      </button>
+      {message && <div className="text-red-600 text-center">{message}</div>}
+    </form>
+  );
+}
